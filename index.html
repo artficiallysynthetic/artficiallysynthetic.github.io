@@ -1,0 +1,774 @@
+<!doctype html>
+<html lang="en">
+
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>SYNTH</title>
+  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;600;700&display=swap" rel="stylesheet">
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box
+    }
+
+    :root {
+      --bg: #282a36;
+      --fg: #f8f8f2;
+      --cyan: #8be9fd;
+      --pink: #ff79c6;
+      --purple: #bd93f9;
+      --green: #50fa7b;
+      --yellow: #f1fa8c;
+      --red: #ff5555;
+    }
+
+    html,
+    body {
+      height: 100%;
+      background: var(--bg);
+      color: var(--fg);
+      font-family: 'IBM Plex Mono', monospace;
+      overflow-x: hidden;
+      font-size: 14px;
+      transition: background 0.2s
+    }
+
+    .cyberdeck {
+      min-height: 100vh;
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 40px;
+      padding: 40px
+    }
+
+    @media(max-width:900px) {
+      .cyberdeck {
+        grid-template-columns: 1fr;
+        grid-template-rows: auto auto 1fr;
+        gap: 20px;
+        padding: 20px
+      }
+    }
+
+    /* LEFT PANEL - NOW PLAYING + TRACKLIST */
+    .left-panel {
+      display: flex;
+      flex-direction: column;
+      gap: 30px
+    }
+
+    @media(max-width:900px) {
+      .left-panel {
+        order: 2;
+        z-index: 10000
+      }
+    }
+
+    .now-playing {
+      padding: 0;
+      position: relative
+    }
+
+    .np-title {
+      font-size: 20px;
+      color: var(--cyan);
+      margin-bottom: 20px;
+      text-transform: uppercase;
+      animation: glitch 3s infinite
+    }
+
+    @keyframes glitch {
+
+      0%,
+      100% {
+        text-shadow: 0 0 0
+      }
+
+      2% {
+        text-shadow: -2px 0 var(--pink), 2px 0 var(--cyan)
+      }
+
+      4% {
+        text-shadow: 2px 0 var(--pink), -2px 0 var(--cyan)
+      }
+
+      6% {
+        text-shadow: 0 0 0
+      }
+    }
+
+    .controls {
+      display: flex;
+      gap: 12px;
+      margin-bottom: 20px;
+      flex-wrap: wrap
+    }
+
+    .btn {
+      background: none;
+      border: none;
+      color: var(--fg);
+      padding: 0;
+      cursor: pointer;
+      font-family: inherit;
+      font-size: 14px;
+      transition: all 0.2s
+    }
+
+    .btn:hover {
+      color: var(--pink);
+      transform: scale(1.1)
+    }
+
+    .btn:active {
+      transform: scale(0.9)
+    }
+
+    .btn.active {
+      color: var(--cyan)
+    }
+
+    .progress-wrap {
+      margin-top: 20px
+    }
+
+    .progress-label {
+      font-size: 10px;
+      color: var(--purple);
+      margin-bottom: 6px;
+      opacity: 0.5
+    }
+
+    .progress-bar {
+      height: 4px;
+      background: rgba(189, 147, 249, 0.1);
+      position: relative
+    }
+
+    .progress-fill {
+      height: 100%;
+      background: var(--purple);
+      width: 0%;
+      transition: width 0.1s linear;
+      position: relative
+    }
+
+    .progress-fill::after {
+      content: '';
+      position: absolute;
+      right: -2px;
+      top: -4px;
+      width: 2px;
+      height: 12px;
+      background: var(--pink);
+      animation: blink 0.8s infinite
+    }
+
+    @keyframes blink {
+
+      0%,
+      50% {
+        opacity: 1
+      }
+
+      51%,
+      100% {
+        opacity: 0
+      }
+    }
+
+    /* TRACKLIST */
+    .tracklist {
+      flex: 1;
+      overflow-y: auto;
+      padding: 0
+    }
+
+    .track-item {
+      padding: 10px 0;
+      cursor: pointer;
+      transition: all 0.2s;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      border-left: 3px solid transparent
+    }
+
+    .track-item:hover {
+      padding-left: 12px;
+      color: var(--pink)
+    }
+
+    .track-item.active {
+      color: var(--cyan);
+      border-left-color: var(--pink)
+    }
+
+    .track-num {
+      color: var(--yellow);
+      margin-right: 12px;
+      opacity: 0.7
+    }
+
+    .track-dur {
+      color: var(--fg);
+      opacity: 0.3;
+      font-size: 11px
+    }
+
+    /* RIGHT PANEL - ASCII DANCER */
+    .right-panel {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      position: relative
+    }
+
+    @media(max-width:900px) {
+      .right-panel {
+        order: 1;
+        min-height: 500px;
+        transform: scale(2);
+        left: -100px;
+      }
+    }
+
+    .dancer-stage {
+      padding: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      width: 100%;
+      height: 100%
+    }
+
+    .dancer {
+      font-size: clamp(48px, 12vw, 220px);
+      line-height: 1.1;
+      white-space: pre;
+      color: var(--cyan);
+      text-align: center;
+      font-weight: bold;
+      animation: float 2s ease-in-out infinite
+    }
+
+    @keyframes float {
+
+      0%,
+      100% {
+        transform: translateY(0)
+      }
+
+      50% {
+        transform: translateY(-10px)
+      }
+    }
+
+    /* HEADER */
+    .header {
+      grid-column: 1/-1;
+      margin-bottom: 0;
+      padding-bottom: 20px
+    }
+
+    @media(max-width:900px) {
+      .header {
+        order: 0
+      }
+    }
+
+    .logo {
+      font-size: 28px;
+      color: var(--cyan);
+      margin-bottom: 4px;
+      font-weight: bold
+    }
+
+    .tagline {
+      font-size: 11px;
+      color: var(--term);
+      opacity: 0.5
+    }
+
+    /* VISUALIZER */
+    .visualizer {
+      height: 80px;
+      margin-top: 20px;
+      position: relative;
+      overflow: hidden
+    }
+
+    .viz-bar {
+      position: absolute;
+      bottom: 0;
+      width: 4px;
+      background: var(--green);
+      transition: height 0.05s
+    }
+
+    /* DROP ZONE */
+    .drop-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(40, 42, 54, 0.98);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      z-index: 1000
+    }
+
+    .drop-overlay.active {
+      display: flex
+    }
+
+    .drop-text {
+      font-size: 20px;
+      color: var(--pink);
+      text-align: center;
+      animation: pulse 1s infinite
+    }
+
+    @keyframes pulse {
+
+      0%,
+      100% {
+        opacity: 1
+      }
+
+      50% {
+        opacity: 0.5
+      }
+    }
+
+    /* New background colour cycling animation */
+    @keyframes background-cycle {
+      0% {
+        background-color: var(--cyan);
+      }
+
+      16% {
+        background-color: var(--pink);
+      }
+
+      33% {
+        background-color: var(--purple);
+      }
+
+      50% {
+        background-color: var(--green);
+      }
+
+      66% {
+        background-color: var(--yellow);
+      }
+
+      83% {
+        background-color: var(--red);
+      }
+
+      100% {
+        background-color: var(--cyan);
+      }
+    }
+
+    /* Apply animation only when music is playing */
+    body.music-playing {
+      animation: background-cycle 2s infinite alternate;
+      /* Faster and alternates for a smoother loop */
+    }
+
+    /* ALL TEXT TURNS WHITE WHEN MUSIC IS PLAYING */
+    body.music-playing * {
+      color: white !important;
+    }
+
+    .status {
+      position: fixed;
+      bottom: 10px;
+      right: 10px;
+      font-size: 10px;
+      color: var(--purple);
+      opacity: 0.3
+    }
+  </style>
+</head>
+
+<body>
+
+  <div class="cyberdeck">
+    <div class="header">
+      <div class="logo">SYNTH_TERMINAL://</div>
+      <div class="tagline">> artficially_synthetic | alpha | press_space_to_vibe</div>
+    </div>
+
+    <div class="left-panel">
+      <div class="now-playing">
+        <div class="np-title" id="npTitle">NO_TRACK_LOADED</div>
+        <div class="controls">
+          <button class="btn" id="btnPrev">PREV</button>
+          <button class="btn active" id="btnPlay">PLAY</button>
+          <button class="btn" id="btnNext">NEXT</button>
+          <button class="btn" style="display:none" id="btnDrop">↑DROP</button>
+        </div>
+        <div class="visualizer" id="visualizer"></div>
+        <div class="progress-wrap">
+          <div class="progress-label">PROGRESS:</div>
+          <div class="progress-bar">
+            <div class="progress-fill" id="progressBar"></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="tracklist" id="tracklist"></div>
+    </div>
+
+    <div class="right-panel">
+      <div class="dancer-stage">
+        <div class="dancer" id="dancer"></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="drop-overlay" id="dropOverlay">
+    <div class="drop-text">
+      DROP_AUDIO_FILES.wav<br>
+      [mp3|wav|m4a|ogg]
+    </div>
+    <input type="file" id="fileInput" accept="audio/*" multiple style="display:none">
+  </div>
+
+  <div class="status">SYSTEM_OK</div>
+
+  <script>
+    const $ = s => document.querySelector(s);
+    const distPrefix = 'dist/';
+
+    // HARDCODED TRACKS
+    const tracks = [
+      {
+        title: "26 Years Apart",
+        file: distPrefix + "26YearsApart.mp3"
+      },{
+        title: "Sweet Words",
+        file: distPrefix + "sweetWords.mp3"
+      },
+      {
+        title: "Memories",
+        file: distPrefix + "memories.mp3"
+      },
+      {
+        title: "Memories (Alt)",
+        file: distPrefix + "memoriesF.mp3"
+      },
+      
+      {
+        title: "White Rabbit Candy",
+        file: distPrefix + "whiteRabbitCandy.mp3"
+      }
+    ];
+
+    let curIdx = 0;
+    let audio, audioCtx, analyser, source, raf;
+
+    // DANCER ANIMATIONS
+    const idleFrames = [
+      `    o
+   /|\\
+   / \\`,
+      `    o
+   \\|/
+   / \\`,
+      `    o
+   /|\\
+   / \\`
+    ];
+
+    const danceFrames = [
+      `    o
+  --|--
+   / \\`,
+      `   \\o/
+    |
+   / \\`,
+      `    o
+  --|--
+   < >`,
+      `   /o\\
+    |
+   / \\`,
+      `    O
+   <|>
+   | |`,
+      `   \\O/
+    |
+   /|\\`,
+      `    o
+   /|\\
+   > <`,
+      `   /o/
+    |
+   | |`
+    ];
+
+    let dancerFrame = 0;
+    let dancerInterval;
+    let isPlaying = false;
+
+    function animateDancer() {
+      clearInterval(dancerInterval);
+      const frames = isPlaying ? danceFrames : idleFrames;
+      const speed = isPlaying ? 150 : 800;
+
+      dancerInterval = setInterval(() => {
+        dancerFrame = (dancerFrame + 1) % frames.length;
+        $('#dancer').textContent = frames[dancerFrame];
+      }, speed);
+    }
+
+    // RENDER TRACKS
+    function renderTracks() {
+      const html = tracks.map((t, i) => `
+    <div class="track-item" data-idx="${i}">
+      <div>
+        <span class="track-num">[${String(i+1).padStart(2,'0')}]</span>
+        <span>${escHtml(t.title)}</span>
+      </div>
+      <div class="track-dur">3:${String(20+i*7).padStart(2,'0')}</div>
+    </div>
+  `).join('');
+      $('#tracklist').innerHTML = html;
+
+      document.querySelectorAll('.track-item').forEach(el => {
+        el.addEventListener('click', () => playTrack(parseInt(el.dataset.idx)));
+      });
+    }
+
+    // AUDIO SETUP
+    function playTrack(idx) {
+      curIdx = idx;
+      const t = tracks[idx];
+
+      if (!audio) {
+        audio = new Audio();
+        audio.crossOrigin = 'anonymous';
+        audio.addEventListener('timeupdate', updateProgress);
+        audio.addEventListener('ended', nextTrack);
+      }
+
+      audio.src = t.file;
+      audio.play();
+      isPlaying = true;
+      document.body.classList.add('music-playing'); // Start background animation
+
+      setupAudio();
+      updateUI();
+      animateDancer();
+    }
+
+    function setupAudio() {
+      if (!audioCtx) {
+        audioCtx = new(window.AudioContext || window.webkitAudioContext)();
+        analyser = audioCtx.createAnalyser();
+        analyser.fftSize = 64;
+      }
+      // Ensure MediaElementSourceNode is created only once for this audio element
+      if (!source) {
+        source = audioCtx.createMediaElementSource(audio);
+        source.connect(analyser);
+        analyser.connect(audioCtx.destination);
+      }
+      startVisuals();
+    }
+
+
+    // VISUALIZER
+    function startVisuals() {
+      const viz = $('#visualizer');
+      viz.innerHTML = '';
+      const barCount = 40;
+      for (let i = 0; i < barCount; i++) {
+        const bar = document.createElement('div');
+        bar.className = 'viz-bar';
+        bar.style.left = (i * (100 / barCount)) + '%';
+        viz.appendChild(bar);
+      }
+
+      const bars = Array.from(viz.children);
+      const bufferLen = analyser.frequencyBinCount;
+      const data = new Uint8Array(bufferLen);
+
+      cancelAnimationFrame(raf);
+
+      function draw() {
+        raf = requestAnimationFrame(draw);
+        analyser.getByteFrequencyData(data);
+
+        bars.forEach((bar, i) => {
+          const idx = Math.floor(i / barCount * bufferLen);
+          const h = (data[idx] / 255) * 80;
+          bar.style.height = h + 'px';
+        });
+      }
+      draw();
+    }
+
+    // UI UPDATES
+    function updateUI() {
+      const t = tracks[curIdx];
+      $('#npTitle').textContent = t.title.toUpperCase();
+
+      document.querySelectorAll('.track-item').forEach((el, i) => {
+        el.classList.toggle('active', i === curIdx);
+      });
+
+      $('#btnPlay').textContent = audio.paused ? '▶PLAY' : '■PAUSE';
+    }
+
+    function updateProgress() {
+      const p = (audio.currentTime / audio.duration) * 100;
+      $('#progressBar').style.width = p + '%';
+    }
+
+    // CONTROLS
+    $('#btnPlay').addEventListener('click', () => {
+      if (!audio) return playTrack(0);
+      if (audio.paused) {
+        audio.play();
+        isPlaying = true;
+        document.body.classList.add('music-playing'); // Start background animation
+      } else {
+        audio.pause();
+        document.body.style.backgroundColor = "var(--bg)";
+        isPlaying = false;
+        document.body.classList.remove('music-playing'); // Stop background animation
+      }
+      animateDancer();
+      updateUI();
+    });
+    
+    $('#dancer').addEventListener('click', () => {
+      if (!audio) return playTrack(0);
+      if (audio.paused) {
+        audio.play();
+        isPlaying = true;
+        document.body.classList.add('music-playing'); // Start background animation
+      } else {
+        audio.pause();
+        document.body.style.backgroundColor = "var(--bg)";
+        isPlaying = false;
+        document.body.classList.remove('music-playing'); // Stop background animation
+      }
+      animateDancer();
+      updateUI();
+    });
+
+    $('#btnPrev').addEventListener('click', () => {
+      curIdx = (curIdx - 1 + tracks.length) % tracks.length;
+      playTrack(curIdx);
+    });
+
+    $('#btnNext').addEventListener('click', () => {
+      curIdx = (curIdx + 1) % tracks.length;
+      playTrack(curIdx);
+    });
+
+    function nextTrack() {
+      curIdx = (curIdx + 1) % tracks.length;
+      playTrack(curIdx);
+    }
+
+    // DROP FILES
+    $('#btnDrop').addEventListener('click', () => {
+      $('#dropOverlay').classList.add('active');
+    });
+
+    $('#dropOverlay').addEventListener('click', e => {
+      if (e.target === $('#dropOverlay')) {
+        $('#dropOverlay').classList.remove('active');
+      } else {
+        $('#fileInput').click();
+      }
+    });
+
+    $('#fileInput').addEventListener('change', e => {
+      handleFiles(e.target.files);
+    });
+
+    ['dragenter', 'dragover', 'drop'].forEach(ev => {
+      document.body.addEventListener(ev, e => e.preventDefault());
+    });
+
+    document.body.addEventListener('drop', e => {
+      handleFiles(e.dataTransfer.files);
+      $('#dropOverlay').classList.remove('active');
+    });
+
+    function handleFiles(files) {
+      const arr = Array.from(files).filter(f => f.type.startsWith('audio/'));
+      if (!arr.length) return;
+
+      const newTracks = arr.map(f => ({
+        title: f.name.replace(/\.[^.]+$/, ''),
+        file: URL.createObjectURL(f)
+      }));
+
+      tracks.push(...newTracks);
+      renderTracks();
+      $('#dropOverlay').classList.remove('active');
+    }
+
+    // KEYBOARD
+    window.addEventListener('keydown', e => {
+      if (e.key === 'ArrowLeft') $('#btnPrev').click();
+      if (e.key === 'ArrowRight') $('#btnNext').click();
+      if (e.key === ' ') {
+        e.preventDefault();
+        $('#btnPlay').click();
+      }
+    });
+
+    const themeColors = [
+      '--cyan', '--pink', '--purple', '--green', '--yellow', '--red'
+    ];
+
+    function startBackgroundAnimation() {
+      const rootStyle = getComputedStyle(document.documentElement);
+      const actualColors = themeColors
+        .map(varName => rootStyle.getPropertyValue(varName).trim())
+        .filter(Boolean); // Ensure valid colors
+
+      if (actualColors.length === 0) {
+        console.warn("No theme colors found for background animation, brah.");
+        return;
+      }
+
+      let currentColorIndex = Math.floor(Math.random() * actualColors.length); // Start with a random color
+      document.body.style.backgroundColor = actualColors[currentColorIndex];
+
+      setInterval(() => {
+        currentColorIndex = (currentColorIndex + 1) % actualColors.length;
+        document.body.style.backgroundColor = actualColors[currentColorIndex];
+      }, 4000); // Change color every 4 seconds
+    }
+
+    function escHtml(s) {
+      return s.replace(/[&<>"']/g, c => ({
+        '&': '&amp;',
+        '<': '&lt;',
+        '>': '&gt;',
+        '"': '&quot;',
+        "'": '&#39;'
+      } [c]));
+    }
+
+    // INIT
+    // INIT
+    renderTracks();
+    animateDancer();
+    // startBackgroundAnimation();
+  </script>
+</body>
+
+</html>
